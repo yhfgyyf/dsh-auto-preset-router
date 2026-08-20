@@ -1,0 +1,11 @@
+# Keep the official roster implementation and change only its assembly-level
+# default. The inserted bridge contributes this package's read-only preset at
+# runtime; DSH's launcher owns and overwrites the shipped roots overlay.
+- id: agent-presets
+  name: '@deepseek-ai/dsh-agent-presets'
+  config:
+    default: auto
+
+- insert:
+    - id: auto-preset-router-bundle
+      name: dsh-auto-preset-router

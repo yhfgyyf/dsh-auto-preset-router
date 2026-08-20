@@ -1,0 +1,5 @@
+# Auto contributes no model-facing tools or persona. It holds the first direct
+# user message in maintenance, selects a shipped preset, recomposes the blank
+# agent, and then restores the original message for the real first turn.
+- id: auto-router
+  name: ./router.js

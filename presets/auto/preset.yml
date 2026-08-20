@@ -1,0 +1,3 @@
+name: 自动模式
+description: 首条用户消息由固定的 DeepSeek V4 Flash 路由到标准、PTC、极简或创造模式，随后会话锁定在所选模式。
+order: 0

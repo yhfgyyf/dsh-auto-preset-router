@@ -1,0 +1,61 @@
+{
+  "name": "dsh-auto-preset-router",
+  "version": "0.1.0",
+  "description": "Route the first prompt to one of DeepSeek Harness's four shipped Agent Presets with DeepSeek V4 Flash.",
+  "license": "MIT",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./router": "./presets/auto/router.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "lib",
+    "presets",
+    "scripts",
+    "test",
+    "cordis.patch.yml",
+    "README.md",
+    "README.zh-CN.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "scripts": {
+    "test": "node --test",
+    "check": "node --check index.js && node --check lib/config.js && node --check presets/auto/router.js && node scripts/check-package.mjs && node --test",
+    "test:live:tui": "python3 scripts/live-route-cases.py"
+  },
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "dsh-plugin",
+    "agent-preset",
+    "prompt-router",
+    "deepseek-v4"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yhfgyyf/dsh-auto-preset-router.git"
+  },
+  "homepage": "https://github.com/yhfgyyf/dsh-auto-preset-router#readme",
+  "bugs": {
+    "url": "https://github.com/yhfgyyf/dsh-auto-preset-router/issues"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/dsh-agent-presets": "^0.1.0-rc.6"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/dsh-agent-presets": {
+      "optional": true
+    }
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}
