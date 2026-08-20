@@ -6,7 +6,9 @@ import {
   ROUTER_REASONING_EFFORT,
   buildRouteRequest,
   classifyPrompt,
-  parseRoute
+  imageMetadata,
+  parseRoute,
+  promptImages
 } from '../presets/auto/router.js'
 
 const cases = [
@@ -54,6 +56,28 @@ test('the current session model cannot override the fixed router model', () => {
   })
   assert.equal(request.provider, 'deepseek-official')
   assert.equal(request.model, 'deepseek-v4-flash')
+})
+
+test('images stay out of the fixed text-only Flash request and reach the selected preset unchanged', async () => {
+  const image = {
+    type: 'image',
+    attachment: {
+      attachmentId: 'sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      mediaType: 'image/png',
+      bytes: 68,
+      width: 1,
+      height: 1,
+      name: 'fixture.png'
+    }
+  }
+  const metadata = imageMetadata([image])
+  const request = buildRouteRequest(`route this task\n\n[Attached image metadata]\n${metadata}`)
+  assert.equal(request.provider, ROUTER_PROVIDER)
+  assert.equal(request.model, ROUTER_MODEL)
+  assert.equal(request.messages[0].content.some((block) => block.type === 'image'), false)
+  assert.match(request.messages[0].content[0].text, /fixture\.png/u)
+  assert.match(imageMetadata([image]), /fixture\.png, 1x1, image\/png/u)
+  assert.deepEqual(promptImages({ content: [{ type: 'text', text: '' }, image] }), [image])
 })
 
 test('ambiguous classifier output is rejected for Standard fallback', () => {

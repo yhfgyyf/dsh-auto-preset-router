@@ -37,7 +37,7 @@ CASES = [
     },
     {
         "preset": "code",
-        "prompt": "请把四个互不依赖的只读目录检查并行完成后给出一行汇总，不要修改文件。",
+        "prompt": "任务的核心难点是对 200 个互不依赖的目录执行大批量并行工具调用；请用一个 PTC TypeScript 程序完成 fan-out/fan-in 后汇总，不要修改文件。",
         "required_tools": {"run_code"},
     },
     {

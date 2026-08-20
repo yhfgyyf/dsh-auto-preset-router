@@ -36,6 +36,8 @@ Decision priority:
 3. Focused self-contained difficult coding/algorithm/debug work fits the two minimal tools -> minimal.
 4. Otherwise or if uncertain -> standard.
 
+The first task may include attached-image metadata. Route from the user's text and that metadata only; never assume unseen image contents. Do not solve or transcribe the task; only select its execution preset.
+
 Return exactly one lowercase token and nothing else: standard, code, minimal, or cordis.`
 
 /** Keep both the beginning and end of unusually large first prompts. */
@@ -45,13 +47,53 @@ export function boundPrompt(text) {
   return `${text.slice(0, half)}\n\n[... middle omitted by auto router ...]\n\n${text.slice(-half)}`
 }
 
-/** Extract only the text the user supplied; image-only tasks safely fall back. */
+/** Extract the text the user supplied for the classifier's JSON frame. */
 export function promptText(message) {
   return message.content
     .filter((block) => block.type === 'text')
     .map((block) => block.text)
     .join('\n')
     .trim()
+}
+
+/** Preserve the first prompt's durable image references in their original order. */
+export function promptImages(message) {
+  return message.content.filter((block) => block.type === 'image')
+}
+
+/** Assemble visible text from one provider-neutral stream. */
+async function streamedText(llm, request, label) {
+  const textByIndex = new Map()
+  let terminal
+  for await (const chunk of llm.stream(request)) {
+    if (chunk.type === 'text-delta') {
+      textByIndex.set(chunk.index, `${textByIndex.get(chunk.index) ?? ''}${chunk.text}`)
+    } else if (chunk.type === 'block-end' && chunk.block.type === 'text') {
+      textByIndex.set(chunk.index, chunk.block.text)
+    } else if (chunk.type === 'finish') {
+      terminal = chunk.reason
+    }
+  }
+  if (terminal?.kind === 'error' || terminal?.kind === 'aborted') {
+    const error = new Error(`${label}: ${terminal.failure.message}`)
+    error.code = terminal.failure.code
+    throw error
+  }
+  if (terminal?.kind === 'max-tokens') throw new Error(`${label}: output limit exceeded`)
+  if (terminal?.kind === 'tool-calls') throw new Error(`${label}: model unexpectedly requested a tool`)
+  return [...textByIndex.entries()]
+    .sort(([left], [right]) => left - right)
+    .map(([, text]) => text)
+    .join('')
+    .trim()
+}
+
+/** Text-only facts the fixed Flash router may safely receive about attachments. */
+export function imageMetadata(images) {
+  return images.map((block, index) => {
+    const ref = block.attachment
+    return `[Image #${index + 1}: ${ref.name ?? ref.mediaType}, ${ref.width}x${ref.height}, ${ref.mediaType}]`
+  }).join('\n')
 }
 
 /** Build a provider-neutral one-shot call whose route never inherits the session model. */
@@ -101,32 +143,9 @@ export function parseRoute(raw) {
   throw new Error(`auto-router: classifier returned no single preset token: ${JSON.stringify(raw.slice(0, 160))}`)
 }
 
-/** Run the fixed auxiliary model and assemble its text-only result. */
+/** Run the fixed auxiliary model and assemble its text-only route result. */
 export async function classifyPrompt(llm, prompt, options = {}) {
-  const textByIndex = new Map()
-  let terminal
-  for await (const chunk of llm.stream(buildRouteRequest(prompt, options))) {
-    if (chunk.type === 'text-delta') {
-      textByIndex.set(chunk.index, `${textByIndex.get(chunk.index) ?? ''}${chunk.text}`)
-    } else if (chunk.type === 'block-end' && chunk.block.type === 'text') {
-      textByIndex.set(chunk.index, chunk.block.text)
-    } else if (chunk.type === 'finish') {
-      terminal = chunk.reason
-    }
-  }
-
-  if (terminal?.kind === 'error' || terminal?.kind === 'aborted') {
-    const error = new Error(`auto-router: ${terminal.failure.message}`)
-    error.code = terminal.failure.code
-    throw error
-  }
-  if (terminal?.kind === 'max-tokens') throw new Error('auto-router: classifier exceeded its 16-token output limit')
-  if (terminal?.kind === 'tool-calls') throw new Error('auto-router: classifier unexpectedly requested a tool')
-
-  const raw = [...textByIndex.entries()]
-    .sort(([left], [right]) => left - right)
-    .map(([, text]) => text)
-    .join('')
+  const raw = await streamedText(llm, buildRouteRequest(prompt, options), 'auto-router classifier')
   return { preset: parseRoute(raw), raw }
 }
 
@@ -174,9 +193,13 @@ export function apply(ctx) {
       task = agent.runMaintenance(async (signal) => {
         let requested = FALLBACK_PRESET
         const prompt = promptText(message)
-        if (prompt !== '') {
+        const images = promptImages(message)
+        const classifierPrompt = images.length === 0
+          ? prompt
+          : `${prompt}\n\n[Attached image metadata]\n${imageMetadata(images)}`.trim()
+        if (classifierPrompt !== '') {
           try {
-            requested = (await classifyPrompt(ctx.llm, prompt, {
+            requested = (await classifyPrompt(ctx.llm, classifierPrompt, {
               sessionId: agent.session.id,
               signal
             })).preset
