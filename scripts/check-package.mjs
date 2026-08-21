@@ -10,6 +10,7 @@ const patch = await readFile(join(root, manifest.dsh?.bundle?.patch ?? ''), 'utf
 assert.equal(manifest.name, 'dsh-auto-preset-router')
 assert.equal(manifest.type, 'module')
 assert.equal(manifest.dsh.bundle.patch, './cordis.patch.yml')
+assert.equal(manifest.peerDependencies['@deepseek-ai/dsh-agent-presets'], '^0.1.1-rc.1')
 assert.match(patch, /^\s*- id: agent-presets/mu)
 assert.match(patch, /^\s*name: '@deepseek-ai\/dsh-agent-presets'/mu)
 assert.match(patch, /^\s*default: auto/mu)

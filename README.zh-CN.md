@@ -17,13 +17,13 @@ prompt 不变，由会话当前选择的模型在目标模式下执行。
 | `cordis` 创造模式 | DSH preset、Cordis composition/plugin、host/preset plane 或运行时接线工作 |
 
 分类请求不携带工具，推理强度为 `off`，temperature 为 `0`，输出上限为 16
-tokens。DSH rc.8 下，固定 Flash 分类器只接收首条 prompt 文本和安全的附件元
+tokens。DSH rc.1 下，固定 Flash 分类器只接收首条 prompt 文本和安全的附件元
 数据（文件名、尺寸、媒体类型），不会接收图片字节；原始多模态消息不会被改写。
 分类调用失败、输出含糊或无法解析时，安全回退到标准模式。
 
 ## 安装
 
-要求 DeepSeek Harness `0.1.0-rc.8` 或兼容的后续版本。
+要求 DeepSeek Harness `0.1.1-rc.1` 或兼容的后续版本。
 
 Web profile：
 
@@ -67,10 +67,11 @@ dsh plugin --profile tui remove dsh-auto-preset-router
 
 无论会话当前选择哪个模型，第一条 prompt 的文本与附件元数据都会发送给
 DeepSeek V4 Flash 做分类，图片字节不会发送给分类器。路由完成后，未改写的多
-模态 prompt 继续走 DSH rc.8 原生附件通道，因此会话当前模型必须真实声明图片
-输入能力。官方自带的 DeepSeek Flash/Pro 路由是纯文本的；DSH 会拒绝发送并保留
-草稿，直到切换到支持图片的模型。超过 24,000 字符时只保留开头和结尾；分类失败
-会进入标准模式。
+模态 prompt 继续走 DSH rc.1 原生附件通道，因此会话当前模型必须真实声明图片
+输入能力。官方自带的 DeepSeek Flash/Pro 路由是纯文本的；rc.1 新增官方
+`deepseek-v4-flash-vision-exp` 图片模型。DSH 会拒绝发送并保留草稿，直到选择该
+模型或其他支持图片的路由。超过 24,000 字符时只保留开头和结尾；分类失败会进入
+标准模式。
 
 ## 开发与校验
 

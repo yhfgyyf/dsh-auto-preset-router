@@ -18,13 +18,13 @@ session.
 | `cordis` | DSH preset, Cordis composition/plugin, host-plane, or runtime wiring work |
 
 The classifier uses no tools, reasoning effort `off`, temperature `0`, and a
-16-token output limit. On DSH rc.8 it receives the first prompt text plus safe
+16-token output limit. On DSH rc.1 it receives the first prompt text plus safe
 attachment metadata (name, dimensions, and media type), never image bytes.
 A failed or ambiguous classification falls back to `standard`.
 
 ## Install
 
-DeepSeek Harness `0.1.0-rc.8` or a compatible later build is required.
+DeepSeek Harness `0.1.1-rc.1` or a compatible later build is required.
 
 ```sh
 dsh plugin --profile web add github:yhfgyyf/dsh-auto-preset-router
@@ -69,12 +69,13 @@ roster contribution on the next process start.
 
 The first prompt text and attachment metadata are sent to DeepSeek V4 Flash
 even when the session uses a different model. Image bytes are never sent to
-the classifier. The untouched multimodal prompt goes through DSH's native rc.8
+the classifier. The untouched multimodal prompt goes through DSH's native rc.1
 attachment path after routing, so the session's selected model must genuinely
 declare image input. DeepSeek's shipped Flash and Pro routes are text-only;
-DSH refuses the send and retains the draft until an image-capable model is
-selected. Prompts over 24,000 characters are reduced to their beginning and
-end. Classifier failures route to `standard`.
+rc.1 adds the official `deepseek-v4-flash-vision-exp` image model. DSH refuses
+the send and retains the draft until that model, or another image-capable
+route, is selected. Prompts over 24,000 characters are reduced to their
+beginning and end. Classifier failures route to `standard`.
 
 ## Development
 
