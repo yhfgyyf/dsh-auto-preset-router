@@ -37,12 +37,12 @@ CASES = [
     },
     {
         "preset": "code",
-        "prompt": "任务的核心难点是对 200 个互不依赖的目录执行大批量并行工具调用；请用一个 PTC TypeScript 程序完成 fan-out/fan-in 后汇总，不要修改文件。",
+        "prompt": "分析 SGLang 仓库中 SM120 架构如何推理 DeepSeek V4 Flash、使用哪些算子，以及适配到 SM89 需要修改哪些代码；不要修改文件。",
         "required_tools": {"run_code"},
     },
     {
         "preset": "minimal",
-        "prompt": "请实现一个自包含算法：用 O(n log n) 求最长递增子序列并解释正确性；不联网，只回答代码。",
+        "prompt": "请给出一个自包含的严格数学证明：任意至少有两个顶点的有限树都有至少两个叶子；不联网，不读取仓库，也不要编写程序。",
         "required_tools": {"bash", "str_replace_editor"},
     },
     {
@@ -147,6 +147,20 @@ def verify(case: dict, events: list[dict]) -> None:
     assert events[0]["type"] == "session"
     assert events[0]["agentPreset"] == "auto"
 
+    classified_index = next(
+        index
+        for index, event in enumerate(events)
+        if event["type"] == "auto-router/classified"
+    )
+    classified = events[classified_index]["data"]
+    assert classified["classifierProvider"] == "deepseek-official"
+    assert classified["classifierModel"] == "deepseek-v4-flash"
+    assert classified["rawOutput"] == case["preset"]
+    assert classified["finalPreset"] == case["preset"]
+    assert classified["fallbackUsed"] is False
+    assert classified["errorCode"] is None
+    assert isinstance(classified["latencyMs"], int) and classified["latencyMs"] >= 0
+
     selected_index = next(
         index
         for index, event in enumerate(events)
@@ -155,7 +169,7 @@ def verify(case: dict, events: list[dict]) -> None:
     )
     turn_index = next(index for index, event in enumerate(events) if event["type"] == "turn/start")
     request_index = next(index for index, event in enumerate(events) if event["type"] == "request/header")
-    assert selected_index < turn_index < request_index
+    assert classified_index < selected_index < turn_index < request_index
 
     user_message = next(
         event
@@ -178,7 +192,7 @@ def main() -> int:
     for case in CASES:
         path, events = run_case(case)
         verify(case, events)
-        print(f"  ✓ {case['preset']}: selected before turn/start; target tools on first request")
+        print(f"  ✓ {case['preset']}: classified trace and selection precede turn/start; target tools on first request")
         print(f"    {path}")
     print("\nALL FOUR LIVE AUTO ROUTE CASES PASSED")
     return 0

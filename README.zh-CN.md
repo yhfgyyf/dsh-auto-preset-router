@@ -11,9 +11,9 @@ prompt 不变，由会话当前选择的模型在目标模式下执行。
 
 | 目标模式 | 适用任务 |
 |---|---|
-| `standard` 标准模式 | 联网或时效信息、混合型任务、一般问答、需要完整工具生态、无法明确判断的任务 |
-| `code` PTC 模式 | 核心难点是大批量、可并行的工具调用，需要集中 fan-out/fan-in |
-| `minimal` 极简模式 | 自包含的高难度编码、算法、调试或重构，只需要持久 Bash 与编辑器 |
+| `standard` 标准模式 | 联网或时效信息、混合型非编程任务、一般问答、需要完整工具生态、无法明确判断的任务 |
+| `code` PTC 模式 | 所有仓库/源码分析和编程任务，以及大批量、可并行的工具调用 |
+| `minimal` 极简模式 | 不涉及仓库、源码或编程的自包含高难度推理、数学或算法分析 |
 | `cordis` 创造模式 | DSH preset、Cordis composition/plugin、host/preset plane 或运行时接线工作 |
 
 分类请求不携带工具，推理强度为 `off`，temperature 为 `0`，输出上限为 16
@@ -53,8 +53,11 @@ agent-presets:
   default: auto
 ```
 
-第一条 prompt 完成路由后，插件会先持久化 `agent-preset/selected`，再开始真正
-的第一轮模型请求。此后会话遵循 DSH 原生规则锁定模式，不能中途切换。
+第一条 prompt 完成路由后，插件会依次持久化 `auto-router/classified` 和
+`agent-preset/selected`，再开始真正的第一轮模型请求。分类事件记录
+`classifierProvider`、`classifierModel`、`rawOutput`、`finalPreset`、
+`fallbackUsed`、`errorCode` 和 `latencyMs`。此后会话遵循 DSH 原生规则锁定模式，
+不能中途切换。
 
 ## 卸载
 

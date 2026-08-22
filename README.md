@@ -12,9 +12,9 @@ session.
 
 | Target | Selected for |
 |---|---|
-| `standard` | Web/current information, mixed work, general assistance, full tool ecosystem, or ambiguity |
-| `code` | Broad batch or parallel tool orchestration where PTC fan-out/fan-in is central |
-| `minimal` | Focused, self-contained implementation, debugging, refactoring, or algorithm work needing only persistent bash and the editor |
+| `standard` | Web/current information, mixed non-programming work, general assistance, full tool ecosystem, or ambiguity |
+| `code` | Any repository/source-code analysis or programming task, plus broad batch/parallel tool orchestration |
+| `minimal` | Demanding self-contained reasoning, mathematics, or algorithmic analysis with no repository or programming work |
 | `cordis` | DSH preset, Cordis composition/plugin, host-plane, or runtime wiring work |
 
 The classifier uses no tools, reasoning effort `off`, temperature `0`, and a
@@ -54,9 +54,11 @@ agent-presets:
   default: auto
 ```
 
-After the first prompt is routed, DSH records `agent-preset/selected` before
-the first real turn. The session is then locked to the selected preset by DSH's
-normal non-empty-session rule.
+After the first prompt is routed, DSH records `auto-router/classified` and then
+`agent-preset/selected` before the first real turn. The classification event
+contains `classifierProvider`, `classifierModel`, `rawOutput`, `finalPreset`,
+`fallbackUsed`, `errorCode`, and `latencyMs`. The session is then locked to the
+selected preset by DSH's normal non-empty-session rule.
 
 ## Remove
 
