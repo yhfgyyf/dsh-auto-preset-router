@@ -63,8 +63,12 @@ test('the current session model cannot override the fixed router model', () => {
 
 test('routing policy sends every repository-analysis or programming task to code', () => {
   assert.match(ROUTER_SYSTEM_PROMPT, /every task that involves analyzing or exploring a source-code repository/u)
-  assert.match(ROUTER_SYSTEM_PROMPT, /Any source repository analysis, source-code work, or programming activity -> code/u)
+  assert.match(ROUTER_SYSTEM_PROMPT, /Any source repository analysis, source-code work, or programming activity -> code, including DSH\/Cordis\/plugin code/u)
   assert.doesNotMatch(ROUTER_SYSTEM_PROMPT, /Do not choose it merely because the task contains source code/u)
+  assert.ok(
+    ROUTER_SYSTEM_PROMPT.indexOf('Any source repository analysis')
+      < ROUTER_SYSTEM_PROMPT.indexOf('Non-programming DSH preset/Cordis')
+  )
 })
 
 test('images stay out of the fixed text-only Flash request and reach the selected preset unchanged', async () => {

@@ -15,7 +15,7 @@ session.
 | `standard` | Web/current information, mixed non-programming work, general assistance, full tool ecosystem, or ambiguity |
 | `code` | Any repository/source-code analysis or programming task, plus broad batch/parallel tool orchestration |
 | `minimal` | Demanding self-contained reasoning, mathematics, or algorithmic analysis with no repository or programming work |
-| `cordis` | DSH preset, Cordis composition/plugin, host-plane, or runtime wiring work |
+| `cordis` | Non-programming DSH preset/Cordis conceptual or runtime work |
 
 The classifier uses no tools, reasoning effort `off`, temperature `0`, and a
 16-token output limit. On DSH rc.1 it receives the first prompt text plus safe

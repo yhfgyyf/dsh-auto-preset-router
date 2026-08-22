@@ -4,10 +4,10 @@ This preset routes only the first direct user prompt. The auxiliary classifier
 is fixed to `deepseek-official/deepseek-v4-flash`; the selected shipped preset
 then handles the untouched prompt with the model selected for the session.
 
-Routes: `standard`, `code`, `minimal`, or `cordis`. Repository analysis and
-all programming work route to `code` (except DSH/Cordis self-extension work,
-which routes to `cordis`). Classification failure and ambiguous output fall
-back to `standard`.
+Routes: `standard`, `code`, `minimal`, or `cordis`. All repository analysis and
+programming work routes to `code`, including DSH/Cordis/plugin code. `cordis`
+is reserved for non-programming DSH conceptual or runtime work. Classification
+failure and ambiguous output fall back to `standard`.
 
 Before `agent-preset/selected`, the router persists an
 `auto-router/classified` event with the fixed classifier provider/model, raw

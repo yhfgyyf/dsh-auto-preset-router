@@ -14,7 +14,7 @@ prompt 不变，由会话当前选择的模型在目标模式下执行。
 | `standard` 标准模式 | 联网或时效信息、混合型非编程任务、一般问答、需要完整工具生态、无法明确判断的任务 |
 | `code` PTC 模式 | 所有仓库/源码分析和编程任务，以及大批量、可并行的工具调用 |
 | `minimal` 极简模式 | 不涉及仓库、源码或编程的自包含高难度推理、数学或算法分析 |
-| `cordis` 创造模式 | DSH preset、Cordis composition/plugin、host/preset plane 或运行时接线工作 |
+| `cordis` 创造模式 | 不涉及仓库、源码或编程的 DSH preset/Cordis 概念或运行时工作 |
 
 分类请求不携带工具，推理强度为 `off`，temperature 为 `0`，输出上限为 16
 tokens。DSH rc.1 下，固定 Flash 分类器只接收首条 prompt 文本和安全的附件元
