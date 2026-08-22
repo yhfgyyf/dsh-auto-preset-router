@@ -22,6 +22,11 @@ The classifier uses no tools, reasoning effort `off`, temperature `0`, and a
 attachment metadata (name, dimensions, and media type), never image bytes.
 A failed or ambiguous classification falls back to `standard`.
 
+While Auto waits for the first prompt, it mounts only DSH's official filesystem
+Skill catalog provider so Web and TUI can offer user-invocable `/skill-name`
+entries. Auto itself still exposes no model-facing tools; after routing, the
+selected preset owns Skill loading and prompt injection.
+
 ## Install
 
 DeepSeek Harness `0.1.1-rc.1` or a compatible later build is required.

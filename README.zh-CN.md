@@ -21,6 +21,10 @@ tokens。DSH rc.1 下，固定 Flash 分类器只接收首条 prompt 文本和�
 数据（文件名、尺寸、媒体类型），不会接收图片字节；原始多模态消息不会被改写。
 分类调用失败、输出含糊或无法解析时，安全回退到标准模式。
 
+Auto 等待首条 prompt 时只挂载 DSH 官方文件系统 Skill 目录提供器，使 Web 和 TUI
+可以展示允许用户调用的 `/skill-name`。Auto 本身仍不提供任何模型工具；完成路由后，
+由目标 preset 负责 Skill 加载和 prompt 注入。
+
 ## 安装
 
 要求 DeepSeek Harness `0.1.1-rc.1` 或兼容的后续版本。

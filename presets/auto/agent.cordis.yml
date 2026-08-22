@@ -1,5 +1,9 @@
-# Auto contributes no model-facing tools or persona. It holds the first direct
-# user message in maintenance, selects a shipped preset, recomposes the blank
-# agent, and then restores the original message for the real first turn.
+# Auto contributes no model-facing tools or persona. The filesystem provider
+# exposes the official user-invocable Skill catalog to Web/TUI while the first
+# prompt is still waiting for routing; the selected preset owns the eventual
+# tool-skill injection after recompose.
+- id: skill-filesystem
+  name: '@deepseek-ai/dsh-skill-filesystem'
+
 - id: auto-router
   name: ./router.js
