@@ -33,7 +33,7 @@ CASES = [
     {
         "preset": "standard",
         "prompt": "请联网查询 DeepSeek 官方网站当前最新的 API 公告标题，只回答标题，不修改文件。",
-        "required_tools": {"web_search"},
+        "required_tools": {"search_tools", "describe_tools"},
     },
     {
         "preset": "code",
@@ -43,12 +43,12 @@ CASES = [
     {
         "preset": "minimal",
         "prompt": "请给出一个自包含的严格数学证明：任意至少有两个顶点的有限树都有至少两个叶子；不联网，不读取仓库，也不要编写程序。",
-        "required_tools": {"bash", "str_replace_editor"},
+        "required_tools": {"search_tools", "describe_tools"},
     },
     {
         "preset": "cordis",
         "prompt": "请检查 DSH Agent preset 的 Cordis composition，并判断路由插件应属于 host plane 还是 preset plane。",
-        "required_tools": {"cordis_inspect_self"},
+        "required_tools": {"search_tools", "describe_tools"},
     },
 ]
 
@@ -160,6 +160,9 @@ def verify(case: dict, events: list[dict]) -> None:
     assert classified["fallbackUsed"] is False
     assert classified["errorCode"] is None
     assert isinstance(classified["latencyMs"], int) and classified["latencyMs"] >= 0
+    assert classified["capabilitySelection"] == "model"
+    assert isinstance(classified["toolHints"], list)
+    assert isinstance(classified["skillHints"], list)
 
     selected_index = next(
         index
@@ -192,7 +195,7 @@ def main() -> int:
     for case in CASES:
         path, events = run_case(case)
         verify(case, events)
-        print(f"  ✓ {case['preset']}: classified trace and selection precede turn/start; target tools on first request")
+        print(f"  ✓ {case['preset']}: classified trace and selection precede turn/start; stable discovery surface present")
         print(f"    {path}")
     print("\nALL FOUR LIVE AUTO ROUTE CASES PASSED")
     return 0

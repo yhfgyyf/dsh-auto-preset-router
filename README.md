@@ -6,7 +6,11 @@ A DeepSeek Harness profile bundle that adds an **Auto** Agent Preset. The first
 direct user prompt is classified by the fixed
 `deepseek-official/deepseek-v4-flash` model, then the untouched prompt runs
 under one of DSH's four shipped presets with the model selected for that
-session.
+session. After mounting the target preset, an isolated second V4 Flash call
+selects likely necessary installed tool and Skill names from a bounded,
+JSON-framed catalog; deterministic lexical ranking is the failure fallback.
+Auto appends only those bounded names. It never loads a Skill body or changes
+the target preset's tool prefix.
 
 ## Routing policy
 
@@ -33,6 +37,7 @@ DeepSeek Harness `0.1.1-rc.1` or a compatible later build is required.
 
 ```sh
 dsh plugin --profile web add github:yhfgyyf/dsh-auto-preset-router
+dsh plugin --profile web add github:yhfgyyf/dsh-progressive-tools
 dsh web
 ```
 
@@ -41,6 +46,7 @@ For a separately installed TUI profile that composes the official
 
 ```sh
 dsh plugin --profile tui add github:yhfgyyf/dsh-auto-preset-router
+dsh plugin --profile tui add github:yhfgyyf/dsh-progressive-tools
 dsh --profile tui
 ```
 
@@ -57,8 +63,16 @@ agent-presets:
 After the first prompt is routed, DSH records `auto-router/classified` and then
 `agent-preset/selected` before the first real turn. The classification event
 contains `classifierProvider`, `classifierModel`, `rawOutput`, `finalPreset`,
-`fallbackUsed`, `errorCode`, and `latencyMs`. The session is then locked to the
+`fallbackUsed`, `errorCode`, `latencyMs`, `capabilitySelection`, `toolHints`,
+and `skillHints`. The
+session is then locked to the
 selected preset by DSH's normal non-empty-session rule.
+
+When at least one installed summary matches, a plugin-owned
+`<auto-capability-hints>` message follows the untouched first user message. It
+names at most five tools and three Skills. With `dsh-progressive-tools`, the
+agent uses `search_tools`/`describe_tools` for deferred schemas; selected Skills
+continue through DSH's official stable `skill(name)` loader.
 
 ## Remove
 

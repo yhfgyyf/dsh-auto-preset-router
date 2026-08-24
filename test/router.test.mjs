@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
+  CAPABILITY_SELECTOR_SYSTEM_PROMPT,
   ROUTER_CLASSIFIED_EVENT,
   ROUTER_MODEL,
   ROUTER_PROVIDER,
@@ -8,6 +9,7 @@ import {
   ROUTER_SYSTEM_PROMPT,
   apply,
   buildRouteRequest,
+  capabilityHints,
   classifyPrompt,
   imageMetadata,
   parseRoute,
@@ -28,6 +30,20 @@ function fakeLlm(token, calls) {
       yield { type: 'block-start', index: 0, blockType: 'text' }
       yield { type: 'text-delta', index: 0, text: token }
       yield { type: 'block-end', index: 0, block: { type: 'text', text: token } }
+      yield { type: 'finish', reason: { kind: 'stop' } }
+    }
+  }
+}
+
+function fakeAutoLlm(routeToken, capabilitySelection) {
+  return {
+    async *stream(request) {
+      const text = request.system === CAPABILITY_SELECTOR_SYSTEM_PROMPT
+        ? JSON.stringify(capabilitySelection)
+        : routeToken
+      yield { type: 'block-start', index: 0, blockType: 'text' }
+      yield { type: 'text-delta', index: 0, text }
+      yield { type: 'block-end', index: 0, block: { type: 'text', text } }
       yield { type: 'finish', reason: { kind: 'stop' } }
     }
   }
@@ -119,6 +135,7 @@ function fakeRoutingHarness(classifierToken) {
     ctx: {},
     session: {
       id: 'session-routing-test',
+      header: { cwd: '/fixture' },
       events,
       append(type, data) {
         const event = { type, data }
@@ -158,7 +175,26 @@ function fakeRoutingHarness(classifierToken) {
   }
 
   const ctx = {
-    llm: fakeLlm(classifierToken, []),
+    llm: fakeAutoLlm(classifierToken, {
+      tools: ['read'],
+      skills: ['repository-repair']
+    }),
+    tools: {
+      schemas: () => [
+        { name: 'read', description: '读取并分析代码仓库。', parameters: {} },
+        { name: 'web_search', description: '搜索当前网页。', parameters: {} }
+      ]
+    },
+    skills: {
+      snapshot: async () => ({
+        complete: true,
+        skills: [{
+          name: 'repository-repair',
+          description: '修改代码实现并运行测试。',
+          invocation: { modelInvocable: true, userInvocable: true }
+        }]
+      })
+    },
     agentPresets: {
       async recompose(_agentContext, preset) {
         return { id: preset }
@@ -188,7 +224,10 @@ test('successful routing persists a complete classified event before preset sele
     finalPreset: 'code',
     fallbackUsed: false,
     errorCode: null,
-    latencyMs: harness.events[0].data.latencyMs
+    latencyMs: harness.events[0].data.latencyMs,
+    capabilitySelection: 'model',
+    toolHints: ['read'],
+    skillHints: ['repository-repair']
   })
   assert.ok(Number.isInteger(harness.events[0].data.latencyMs))
   assert.ok(harness.events[0].data.latencyMs >= 0)
@@ -196,7 +235,11 @@ test('successful routing persists a complete classified event before preset sele
     type: 'agent-preset/selected',
     data: { agentPreset: 'code' }
   })
-  assert.deepEqual(harness.nextTurn, [harness.message])
+  assert.equal(harness.nextTurn[0], harness.message)
+  assert.equal(harness.nextTurn[1].source.kind, 'plugin')
+  assert.match(harness.nextTurn[1].content[0].text, /<auto-capability-hints>/u)
+  assert.match(harness.nextTurn[1].content[0].text, /`repository-repair`/u)
+  assert.doesNotMatch(harness.nextTurn[1].content[0].text, /修改代码实现并运行测试/u)
 })
 
 test('classifier fallback preserves raw output and a stable error code', async () => {
@@ -208,5 +251,58 @@ test('classifier fallback preserves raw output and a stable error code', async (
   assert.equal(harness.events[0].data.finalPreset, 'standard')
   assert.equal(harness.events[0].data.fallbackUsed, true)
   assert.equal(harness.events[0].data.errorCode, 'INVALID_CLASSIFIER_OUTPUT')
+  assert.equal(harness.events[0].data.capabilitySelection, 'model')
+  assert.deepEqual(harness.events[0].data.toolHints, ['read'])
+  assert.deepEqual(harness.events[0].data.skillHints, ['repository-repair'])
   assert.equal(harness.events[1].data.agentPreset, 'standard')
+})
+
+test('capability ranking returns names and summaries without loading skill bodies', async () => {
+  let lookup
+  const hints = await capabilityHints({
+    llm: fakeAutoLlm('unused', {
+      tools: ['edit'],
+      skills: ['plugin-authoring', 'internal-plugin-notes']
+    }),
+    tools: {
+      schemas: () => [
+        { name: 'edit', description: 'Edit repository source code.', parameters: {} },
+        { name: 'weather', description: 'Read current weather.', parameters: {} }
+      ]
+    },
+    skills: {
+      snapshot: async (input) => {
+        lookup = input
+        return {
+          complete: true,
+          skills: [
+            {
+              name: 'plugin-authoring',
+              description: 'Develop a repository plugin.',
+              invocation: { modelInvocable: true, userInvocable: true }
+            },
+            {
+              name: 'internal-plugin-notes',
+              description: 'Edit repository plugin internals.',
+              invocation: { modelInvocable: false, userInvocable: true }
+            },
+            {
+              name: 'travel',
+              description: 'Plan a holiday.',
+              invocation: { modelInvocable: true, userInvocable: true }
+            }
+          ]
+        }
+      }
+    },
+    logger: { warn() {} }
+  }, {
+    session: { header: { cwd: '/workspace' } }
+  }, 'Edit this repository plugin.', new AbortController().signal)
+
+  assert.deepEqual(hints.tools.map(entry => entry.name), ['edit'])
+  assert.deepEqual(hints.skills.map(entry => entry.name), ['plugin-authoring'])
+  assert.equal(hints.selection, 'model')
+  assert.equal(lookup.cwd, '/workspace')
+  assert.equal('content' in hints.skills[0], false)
 })

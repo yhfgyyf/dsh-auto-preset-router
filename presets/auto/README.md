@@ -11,7 +11,11 @@ failure and ambiguous output fall back to `standard`.
 
 Before `agent-preset/selected`, the router persists an
 `auto-router/classified` event with the fixed classifier provider/model, raw
-output, final preset, fallback flag, error code, and classifier latency.
+output, final preset, fallback flag, error code, classifier latency, capability
+selection mode, and bounded tool/Skill hint-name arrays. An isolated second V4
+Flash call selects those names from a JSON-framed catalog, with lexical fallback.
+After selection, an optional plugin-owned message appends only the names after
+the unchanged user task; Skill bodies remain on-demand.
 
 On DSH rc.1, only first-prompt text and attachment metadata are forwarded to
 the fixed text-only classifier. The original multimodal message remains

@@ -5,7 +5,10 @@
 这是一个符合当前 DeepSeek Harness profile bundle 规范的插件，为 DSH
 新增“自动模式” Agent Preset。它只分析会话的第一条用户 prompt：固定使用
 `deepseek-official/deepseek-v4-flash` 选择四个内置模式之一，随后保持用户原始
-prompt 不变，由会话当前选择的模型在目标模式下执行。
+prompt 不变，由会话当前选择的模型在目标模式下执行。目标 preset 挂载后，Auto
+用第二个隔离的 V4 Flash 小调用，从 JSON 边界化且有上限的已安装工具/Skill 摘要中
+选择可能必要的名称；调用失败才退回确定性词法排序。主上下文只追加有界名称，
+不会加载 Skill 正文，也不会改变目标 preset 的工具前缀。
 
 ## 路由规则
 
@@ -33,6 +36,7 @@ Web profile：
 
 ```sh
 dsh plugin --profile web add github:yhfgyyf/dsh-auto-preset-router
+dsh plugin --profile web add github:yhfgyyf/dsh-progressive-tools
 dsh web
 ```
 
@@ -41,6 +45,7 @@ dsh web
 
 ```sh
 dsh plugin --profile tui add github:yhfgyyf/dsh-auto-preset-router
+dsh plugin --profile tui add github:yhfgyyf/dsh-progressive-tools
 dsh --profile tui
 ```
 
@@ -56,8 +61,14 @@ agent-presets:
 第一条 prompt 完成路由后，插件会依次持久化 `auto-router/classified` 和
 `agent-preset/selected`，再开始真正的第一轮模型请求。分类事件记录
 `classifierProvider`、`classifierModel`、`rawOutput`、`finalPreset`、
-`fallbackUsed`、`errorCode` 和 `latencyMs`。此后会话遵循 DSH 原生规则锁定模式，
+`fallbackUsed`、`errorCode`、`latencyMs`、`capabilitySelection`、`toolHints`
+和 `skillHints`。此后会话遵循 DSH 原生规则锁定模式，
 不能中途切换。
+
+若至少一个已安装摘要匹配，原始首条用户消息之后会追加一条 plugin-owned
+`<auto-capability-hints>`，最多包含 5 个工具名和 3 个 Skill 名。配合
+`dsh-progressive-tools` 时，agent 通过 `search_tools`/`describe_tools` 获取延迟
+schema；Skill 仍通过 DSH 官方稳定的 `skill(name)` loader 按需加载。
 
 ## 卸载
 
