@@ -6,7 +6,7 @@ export const inject = ['agentPresets']
 
 /** Add the package root to the live roster without replacing the DSH service. */
 export function apply(ctx) {
-  const restore = installPresetRoot(ctx.agentPresets, discoverPresets)
+  const restore = installPresetRoot(ctx.agentPresets, discoverPresets, AUTO_PRESET_ROOT, ctx.baseUrl)
   ctx.effect(() => restore, 'dsh-auto-preset-router.roster()')
 }
 

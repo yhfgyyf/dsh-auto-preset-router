@@ -17,17 +17,20 @@ test('installs and restores the roster list extension', async () => {
   const original = async () => [{ id: 'standard', trust: 'system' }]
   const roster = { list: original }
   const calls = []
-  const discover = async (roots) => {
-    calls.push(roots)
+  const discover = async (roots, harnessBase) => {
+    calls.push({ roots, harnessBase })
     return [{ id: 'auto', trust: roots[0].trust }]
   }
 
-  const restore = installPresetRoot(roster, discover, '/plugin/presets')
+  const restore = installPresetRoot(roster, discover, '/plugin/presets', 'file:///harness/')
   assert.deepEqual(await roster.list(), [
     { id: 'auto', trust: 'system' },
     { id: 'standard', trust: 'system' }
   ])
-  assert.deepEqual(calls, [[{ path: '/plugin/presets', trust: 'system' }]])
+  assert.deepEqual(calls, [{
+    roots: [{ path: '/plugin/presets', trust: 'system' }],
+    harnessBase: 'file:///harness/'
+  }])
 
   restore()
   assert.equal(roster.list, original)

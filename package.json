@@ -1,6 +1,6 @@
 {
   "name": "dsh-auto-preset-router",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Route the first prompt to one of DeepSeek Harness's four shipped Agent Presets with DeepSeek V4 Flash.",
   "license": "MIT",
   "type": "module",
@@ -46,8 +46,8 @@
     "url": "https://github.com/yhfgyyf/dsh-auto-preset-router/issues"
   },
   "peerDependencies": {
-    "@deepseek-ai/dsh-agent-presets": "^0.1.1-rc.1",
-    "@deepseek-ai/dsh-skill-filesystem": "^0.1.1-rc.1"
+    "@deepseek-ai/dsh-agent-presets": "^0.1.1-rc.1 || ^0.1.2-alpha.2",
+    "@deepseek-ai/dsh-skill-filesystem": "^0.1.1-rc.1 || ^0.1.2-alpha.2"
   },
   "peerDependenciesMeta": {
     "@deepseek-ai/dsh-agent-presets": {
