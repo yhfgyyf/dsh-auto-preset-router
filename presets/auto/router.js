@@ -455,7 +455,7 @@ export function apply(ctx) {
           capabilitySelection: hints.selection,
           toolHints: hints.tools.map(entry => entry.name),
           skillHints: hints.skills.map(entry => entry.name)
-        })
+        }, { ignorable: true })
         agent.session.append('agent-preset/selected', { agentPreset: preset.id })
         ctx.logger.info(`auto-router: ${ROUTER_PROVIDER}/${ROUTER_MODEL} selected "${preset.id}" for session "${agent.session.id}"`)
         if (signal.aborted) return

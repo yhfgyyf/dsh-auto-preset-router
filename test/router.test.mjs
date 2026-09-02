@@ -137,8 +137,8 @@ function fakeRoutingHarness(classifierToken) {
       id: 'session-routing-test',
       header: { cwd: '/fixture' },
       events,
-      append(type, data) {
-        const event = { type, data }
+      append(type, data, options) {
+        const event = { type, data, ...(options ?? {}) }
         events.push(event)
         return event
       }
@@ -231,6 +231,7 @@ test('successful routing persists a complete classified event before preset sele
   })
   assert.ok(Number.isInteger(harness.events[0].data.latencyMs))
   assert.ok(harness.events[0].data.latencyMs >= 0)
+  assert.equal(harness.events[0].ignorable, true)
   assert.deepEqual(harness.events[1], {
     type: 'agent-preset/selected',
     data: { agentPreset: 'code' }

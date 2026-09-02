@@ -59,7 +59,9 @@ agent-presets:
 ```
 
 第一条 prompt 完成路由后，插件会依次持久化 `auto-router/classified` 和
-`agent-preset/selected`，再开始真正的第一轮模型请求。分类事件记录
+`agent-preset/selected`，再开始真正的第一轮模型请求。分类事件只用于
+诊断，并携带 DSH 的 `ignorable` 信封标记，因此未安装本插件的 Harness
+也可以安全跳过该事件。事件内容包括
 `classifierProvider`、`classifierModel`、`rawOutput`、`finalPreset`、
 `fallbackUsed`、`errorCode`、`latencyMs`、`capabilitySelection`、`toolHints`
 和 `skillHints`。此后会话遵循 DSH 原生规则锁定模式，

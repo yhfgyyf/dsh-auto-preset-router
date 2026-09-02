@@ -62,7 +62,9 @@ agent-presets:
 
 After the first prompt is routed, DSH records `auto-router/classified` and then
 `agent-preset/selected` before the first real turn. The classification event
-contains `classifierProvider`, `classifierModel`, `rawOutput`, `finalPreset`,
+is purely diagnostic and is persisted with the DSH `ignorable` envelope marker,
+so a harness without this plugin can safely skip it. It contains
+`classifierProvider`, `classifierModel`, `rawOutput`, `finalPreset`,
 `fallbackUsed`, `errorCode`, `latencyMs`, `capabilitySelection`, `toolHints`,
 and `skillHints`. The
 session is then locked to the
