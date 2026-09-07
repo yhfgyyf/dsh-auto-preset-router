@@ -34,6 +34,14 @@ selected preset owns Skill loading and prompt injection.
 ## Install
 
 DeepSeek Harness `0.1.1-rc.1` or a compatible later build is required.
+Version 0.2.4 also supports DSH `0.1.3-alpha.2`.
+The first-turn check supports both legacy `Session.events` and the
+`snapshotEvents()` API used by DSH `0.1.2-rc.1`.
+On releases that ship `ptc` instead of `code`, the classifier's `code` result
+mounts `ptc`; the trace records `rawOutput: "code"` and `finalPreset: "ptc"`
+without marking the rename as a fallback.
+Legacy `code` selections also resolve to `ptc` when opening old sessions;
+an explicitly installed `code` preset keeps precedence and menus are unchanged.
 
 ```sh
 dsh plugin --profile web add github:yhfgyyf/dsh-auto-preset-router

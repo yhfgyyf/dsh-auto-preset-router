@@ -74,12 +74,13 @@ def read_available(master: int, timeout: float) -> bytes:
     return b"".join(chunks)
 
 
-def wait_for(master: int, needle: bytes, timeout: float, initial: bytes = b"") -> bytes:
+def wait_for(master: int, needle: bytes | tuple[bytes, ...], timeout: float, initial: bytes = b"") -> bytes:
+    needles = (needle,) if isinstance(needle, bytes) else needle
     output = bytearray(initial)
     deadline = time.monotonic() + timeout
-    while needle not in output and time.monotonic() < deadline:
+    while not any(item in output for item in needles) and time.monotonic() < deadline:
         output.extend(read_available(master, min(0.5, deadline - time.monotonic())))
-    if needle not in output:
+    if not any(item in output for item in needles):
         tail = bytes(output[-1200:]).decode("utf-8", "replace")
         raise AssertionError(f"TUI did not show {needle!r}; tail:\n{tail}")
     return bytes(output)
@@ -122,7 +123,8 @@ def run_case(case: dict) -> tuple[str, list[dict]]:
         os.write(master, case["prompt"].encode("utf-8") + b"\r")
         output = wait_for(master, b"step 1", 45, output)
         os.write(master, b"\x1b")
-        output = wait_for(master, f"preset: {case['preset']}".encode(), 30, output)
+        targets = ("code", "ptc") if case["preset"] == "code" else (case["preset"],)
+        output = wait_for(master, tuple(f"preset: {target}".encode() for target in targets), 30, output)
         os.write(master, b"/exit\r")
         output += drain_until_exit(master, process, 20)
         if process.returncode != 0:
@@ -156,7 +158,9 @@ def verify(case: dict, events: list[dict]) -> None:
     assert classified["classifierProvider"] == "deepseek-official"
     assert classified["classifierModel"] == "deepseek-v4-flash"
     assert classified["rawOutput"] == case["preset"]
-    assert classified["finalPreset"] == case["preset"]
+    targets = {"code", "ptc"} if case["preset"] == "code" else {case["preset"]}
+    assert classified["finalPreset"] in targets
+    assert events[classified_index].get("ignorable") is True
     assert classified["fallbackUsed"] is False
     assert classified["errorCode"] is None
     assert isinstance(classified["latencyMs"], int) and classified["latencyMs"] >= 0
@@ -168,7 +172,7 @@ def verify(case: dict, events: list[dict]) -> None:
         index
         for index, event in enumerate(events)
         if event["type"] == "agent-preset/selected"
-        and event["data"]["agentPreset"] == case["preset"]
+        and event["data"]["agentPreset"] == classified["finalPreset"]
     )
     turn_index = next(index for index, event in enumerate(events) if event["type"] == "turn/start")
     request_index = next(index for index, event in enumerate(events) if event["type"] == "request/header")

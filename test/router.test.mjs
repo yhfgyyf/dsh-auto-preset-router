@@ -115,7 +115,7 @@ test('ambiguous classifier output is rejected for Standard fallback', () => {
 })
 
 
-function fakeRoutingHarness(classifierToken) {
+function fakeRoutingHarness(classifierToken, sessionApi = 'legacy', presetIds = ['standard', 'code', 'minimal', 'cordis']) {
   const events = []
   const nextTurn = []
   const nextStep = []
@@ -136,7 +136,7 @@ function fakeRoutingHarness(classifierToken) {
     session: {
       id: 'session-routing-test',
       header: { cwd: '/fixture' },
-      events,
+      ...(sessionApi === 'snapshot' ? { snapshotEvents: () => [...events] } : { events }),
       append(type, data, options) {
         const event = { type, data, ...(options ?? {}) }
         events.push(event)
@@ -196,7 +196,11 @@ function fakeRoutingHarness(classifierToken) {
       })
     },
     agentPresets: {
+      async list() {
+        return presetIds.map((id) => ({ id }))
+      },
       async recompose(_agentContext, preset) {
+        if (!presetIds.includes(preset)) throw new Error(`unknown preset: ${preset}`)
         return { id: preset }
       }
     },
@@ -241,6 +245,24 @@ test('successful routing persists a complete classified event before preset sele
   assert.match(harness.nextTurn[1].content[0].text, /<auto-capability-hints>/u)
   assert.match(harness.nextTurn[1].content[0].text, /`repository-repair`/u)
   assert.doesNotMatch(harness.nextTurn[1].content[0].text, /修改代码实现并运行测试/u)
+})
+
+test('routing supports sessions exposing only snapshotEvents (DSH 0.1.2)', async () => {
+  const harness = fakeRoutingHarness('code', 'snapshot')
+  await harness.wait()
+  assert.equal(harness.events[0].type, ROUTER_CLASSIFIED_EVENT)
+  assert.equal(harness.events[0].data.finalPreset, 'code')
+  assert.equal(harness.nextTurn[0], harness.message)
+})
+
+test('code classification mounts the renamed PTC preset without fallback', async () => {
+  const harness = fakeRoutingHarness('code', 'snapshot', ['standard', 'ptc', 'minimal', 'cordis'])
+  await harness.wait()
+  assert.equal(harness.events[0].data.rawOutput, 'code')
+  assert.equal(harness.events[0].data.finalPreset, 'ptc')
+  assert.equal(harness.events[0].data.fallbackUsed, false)
+  assert.equal(harness.events[0].data.errorCode, null)
+  assert.equal(harness.events[1].data.agentPreset, 'ptc')
 })
 
 test('classifier fallback preserves raw output and a stable error code', async () => {

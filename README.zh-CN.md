@@ -31,6 +31,13 @@ Auto 等待首条 prompt 时只挂载 DSH 官方文件系统 Skill 目录提供�
 ## 安装
 
 要求 DeepSeek Harness `0.1.1-rc.1` 或兼容的后续版本。
+0.2.4 已适配 DSH `0.1.3-alpha.2`。
+首轮判断同时兼容旧版 `Session.events` 和 DSH `0.1.2-rc.1` 使用的
+`snapshotEvents()` API。
+如果官方只提供 `ptc` 而不再提供 `code`，分类器输出的 `code` 会挂载 `ptc`；
+trace 保留 `rawOutput: "code"`，记录 `finalPreset: "ptc"`，不将更名视为 fallback。
+恢复旧会话时，旧 `code` 选择也会解析为 `ptc`；如果另行安装了 `code` preset，
+仍优先使用它，菜单不增加重复条目。
 
 Web profile：
 

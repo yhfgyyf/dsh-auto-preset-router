@@ -353,7 +353,9 @@ export async function classifyPrompt(llm, prompt, options = {}) {
 function isFirstDirectUserMessage(agent, message) {
   return message.source.kind === 'user'
     && agent.status === 'idle'
-    && !agent.session.events.some((event) => event.type === 'turn/start')
+    && !(typeof agent.session.snapshotEvents === 'function'
+      ? agent.session.snapshotEvents()
+      : agent.session.events).some((event) => event.type === 'turn/start')
 }
 
 function restoreMessage(agent, location, message) {
@@ -364,8 +366,13 @@ function restoreMessage(agent, location, message) {
 
 async function installPreset(ctx, agent, requested) {
   try {
+    // Keep the classifier token stable across the official code -> ptc rename.
+    const available = requested === 'code' ? await ctx.agentPresets.list() : []
+    const target = requested === 'code'
+      && !available.some((preset) => preset.id === 'code')
+      && available.some((preset) => preset.id === 'ptc') ? 'ptc' : requested
     return {
-      preset: await ctx.agentPresets.recompose(agent.ctx, requested),
+      preset: await ctx.agentPresets.recompose(agent.ctx, target),
       fallbackUsed: false,
       errorCode: null
     }
